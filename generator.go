@@ -194,13 +194,10 @@ func (t *gin) generateGinRoute(
 
 		t.P(fmt.Sprintf("func %s (c *gin.Context) {", routeName))
 		t.P(`	p := new(`, inputType, `)`)
-		requestBinding := ""
 		if t.hasHeaderTag(t.Reg.MessageDefinition(method.GetInputType())) {
-			requestBinding = ", binding.Request"
 		}
 		t.P(``)
-		t.P(`	if err := c.ShouldBindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))` +
-			requestBinding + `); err != nil {`)
+		t.P(`	if err := c.ShouldBind(p) ; err != nil {`)
 		t.P(`		return`)
 		t.P(`	}`)
 		t.P(`	resp, err := `, svcName, `.`, methName, `(c, p)`)
