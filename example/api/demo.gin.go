@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/312362115/protoc-gen-gin/ecode"
+	"github.com/liu-junyong/protoc-gen-gin/ecode"
 )
 
 // to suppressed 'imported but not used warning'
@@ -22,9 +22,9 @@ var PathDemoDemo = "/rpc/demo"
 
 // DemoGinServer is the server API for Demo service.
 type DemoGinServer interface {
-	Hello(ctx context.Context, req *HelloReq) (resp *HelloResp, err error)
+	Hello(c *gin.Context, req *HelloReq) (resp *HelloResp, err error)
 
-	Demo(ctx context.Context, req *DemoReq) (resp *DemoResp, err error)
+	Demo(c *gin.Context, req *DemoReq) (resp *DemoResp, err error)
 }
 
 func JSON(c *gin.Context, data interface{}, err error) {
@@ -46,12 +46,12 @@ type Response struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-var DemoSvc DemoGinServer
+var DemoSvc Demo
 
 func demoHello(c *gin.Context) {
 	p := new(HelloReq)
 
-	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
+	if err := c.ShouldBindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
 		return
 	}
 	resp, err := DemoSvc.Hello(c, p)
@@ -61,7 +61,7 @@ func demoHello(c *gin.Context) {
 func demoDemo(c *gin.Context) {
 	p := new(DemoReq)
 
-	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
+	if err := c.ShouldBindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
 		return
 	}
 	resp, err := DemoSvc.Demo(c, p)

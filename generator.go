@@ -94,7 +94,7 @@ func (t *gin) generateImports(file *descriptor.FileDescriptorProto) {
 	t.P()
 	t.P(`	"github.com/gin-gonic/gin"`)
 	t.P(`	"github.com/gin-gonic/gin/binding"`)
-	t.P(`	"github.com/312362115/protoc-gen-gin/ecode"`)
+	t.P(`	"github.com/liu-junyong/protoc-gen-gin/ecode"`)
 	t.P(`)`)
 	// It's legal to import a message and use it as an input or output for a
 	// method. Make sure to import the package of any such message. First, dedupe
@@ -199,7 +199,7 @@ func (t *gin) generateGinRoute(
 			requestBinding = ", binding.Request"
 		}
 		t.P(``)
-		t.P(`	if err := c.BindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))` +
+		t.P(`	if err := c.ShouldBindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))` +
 			requestBinding + `); err != nil {`)
 		t.P(`		return`)
 		t.P(`	}`)
@@ -289,10 +289,10 @@ func (t *gin) generateInterfaceMethod(file *descriptor.FileDescriptorProto,
 
 	respDynamic := tag.GetTagValue("dynamic_resp", tags) == "true"
 	if respDynamic {
-		t.P(fmt.Sprintf(`	%s(ctx context.Context, req *%s) (resp interface{}, err error)`,
+		t.P(fmt.Sprintf(`	%s(c *gin.Context, req *%s) (resp interface{}, err error)`,
 			methName, inputType))
 	} else {
-		t.P(fmt.Sprintf(`	%s(ctx context.Context, req *%s) (resp *%s, err error)`,
+		t.P(fmt.Sprintf(`	%s(c *gin.Context, req *%s) (resp *%s, err error)`,
 			methName, inputType, outputType))
 	}
 }
