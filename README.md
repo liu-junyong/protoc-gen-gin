@@ -19,7 +19,7 @@ go get github.com/liu-junyong/errno
 ```
 https://github.com/liu-junyong/errno/blob/main/errno.go
 
-就一个文件，用来代替默认的error
+就一个文件，用来代替默认的error,如果不喜欢，用replace在 go.mod 替换掉
 
 搭配使用更佳
 
