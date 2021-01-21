@@ -4,11 +4,22 @@
 
 调整一下接口：
 *  *gin.Context 作为接口
-* ShouldBindWith
+* ShouldBind
+* 可以自定义错误返回，可以在错误中自定义log
+* 在实现层次：添加了 errno 代替 error,这样有错误码了
 
 跟：
 * github.com/grpc-ecosystem/grpc-gateway
 * github.com/gogo/protobuf
+
+
+依赖组件：
+```bazaar
+go get github.com/liu-junyong/errno
+```
+https://github.com/liu-junyong/errno/blob/main/errno.go
+
+就一个文件，用来代替默认的error
 
 搭配使用更佳
 
