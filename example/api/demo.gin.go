@@ -46,12 +46,12 @@ type Response struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-var DemoSvc Demo
+var DemoSvc DemoGinServer
 
 func demoHello(c *gin.Context) {
 	p := new(HelloReq)
 
-	if err := c.ShouldBindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
+	if err := c.ShouldBind(p); err != nil {
 		return
 	}
 	resp, err := DemoSvc.Hello(c, p)
@@ -61,7 +61,7 @@ func demoHello(c *gin.Context) {
 func demoDemo(c *gin.Context) {
 	p := new(DemoReq)
 
-	if err := c.ShouldBindWith(p, binding.Default(c.Request.Method, c.Request.Header.Get("Content-Type"))); err != nil {
+	if err := c.ShouldBind(p); err != nil {
 		return
 	}
 	resp, err := DemoSvc.Demo(c, p)
