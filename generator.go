@@ -94,7 +94,7 @@ func (t *gin) generateImports(file *descriptor.FileDescriptorProto) {
 	t.P()
 	t.P(`	"github.com/gin-gonic/gin"`)
 	t.P(`	"github.com/gin-gonic/gin/binding"`)
-	t.P(`	"github.com/liu-junyong/protoc-gen-gin/ecode"`)
+	t.P(`	"github.com/liu-junyong/errno"`)
 	t.P(`)`)
 	// It's legal to import a message and use it as an input or output for a
 	// method. Make sure to import the package of any such message. First, dedupe
@@ -108,6 +108,7 @@ func (t *gin) generateImports(file *descriptor.FileDescriptorProto) {
 	t.P(`var _ *gin.Context`)
 	t.P(`var _ context.Context`)
 	t.P(`var _ binding.StructValidator`)
+
 }
 
 // Big header comments to makes it easier to visually parse a generated file.
@@ -123,24 +124,6 @@ func (t *gin) generateGinRoute(
 	file *descriptor.FileDescriptorProto,
 	service *descriptor.ServiceDescriptorProto) {
 	t.P()
-	t.P(`func JSON(c *gin.Context, data interface{}, err error) {
-		httpCode := http.StatusOK
-		bcode := ecode.Cause(err)
-		if bcode.Code < 0 {
-			httpCode = -bcode.Code
-		}
-		c.JSON(httpCode, Response{
-			Code:    bcode.Code,
-			Message: bcode.Message,
-			Data:    data,
-		})
-	}`)
-	t.P()
-	t.P(`type Response struct {`)
-	t.P("Code int" + " `" + `json:"code"` + "`")
-	t.P("Message string" + " `" + `json:"message"` + "`")
-	t.P("Data interface{}" + " `" + `json:"data,omitempty"` + "`")
-	t.P(`}`)
 	t.P()
 
 	// old mode is generate xx.route.go in the http pkg
@@ -197,11 +180,16 @@ func (t *gin) generateGinRoute(
 		if t.hasHeaderTag(t.Reg.MessageDefinition(method.GetInputType())) {
 		}
 		t.P(``)
-		t.P(`	if err := c.ShouldBind(p) ; err != nil {`)
+		t.P(`	if err := c.ShouldBind(p) ; err != nil {
+				`, svcName, `.HandleParamError(c, err)`)
 		t.P(`		return`)
 		t.P(`	}`)
-		t.P(`	resp, err := `, svcName, `.`, methName, `(c, p)`)
-		t.P(`	JSON(c, resp, err)`)
+		t.P(`	resp, status := `, svcName, `.`, methName, `(c, p)
+if status != nil {
+				`, svcName, `.HandleError(c, status)
+				return
+			}`)
+		t.P(`	c.JSON(http.StatusOK, resp)`)
 		t.P(`}`)
 		t.P()
 	}
@@ -262,6 +250,10 @@ func (t *gin) generateGinInterface(file *descriptor.FileDescriptorProto, service
 		t.generateInterfaceMethod(file, service, method, comments)
 		t.P()
 	}
+	t.P(
+		`HandleParamError(c *gin.Context,err error) //参数解析错误
+	HandleError(c *gin.Context,status *errno.ErrNo) //一般错误码处理
+`)
 	t.P(`}`)
 	return count
 }
@@ -286,10 +278,10 @@ func (t *gin) generateInterfaceMethod(file *descriptor.FileDescriptorProto,
 
 	respDynamic := tag.GetTagValue("dynamic_resp", tags) == "true"
 	if respDynamic {
-		t.P(fmt.Sprintf(`	%s(c *gin.Context, req *%s) (resp interface{}, err error)`,
+		t.P(fmt.Sprintf(`	%s(c *gin.Context, req *%s) (resp interface{}, *errno.ErrNo)`,
 			methName, inputType))
 	} else {
-		t.P(fmt.Sprintf(`	%s(c *gin.Context, req *%s) (resp *%s, err error)`,
+		t.P(fmt.Sprintf(`	%s(c *gin.Context, req *%s) (resp *%s, err *errno.ErrNo)`,
 			methName, inputType, outputType))
 	}
 }
