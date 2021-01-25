@@ -52,6 +52,8 @@ func (t *gin) generateForFile(file *descriptor.FileDescriptorProto) *plugin.Code
 		t.generateGinRoute(file, service)
 	}
 
+	t.generateErrorHandleInterface(file)
+
 	resp.Name = proto.String(naming.GenFileName(file, ".gin.go"))
 	resp.Content = proto.String(t.FormattedOutput())
 	t.Output.Reset()
@@ -181,12 +183,12 @@ func (t *gin) generateGinRoute(
 		}
 		t.P(``)
 		t.P(`	if err := c.ShouldBind(p) ; err != nil {
-				`, svcName, `.HandleParamError(c, err)`)
+				`, `errorHandleService.HandleParamError(c, err)`)
 		t.P(`		return`)
 		t.P(`	}`)
 		t.P(`	resp, status := `, svcName, `.`, methName, `(c, p)
 if status != nil {
-				`, svcName, `.HandleError(c, status)
+				`, `errorHandleService.HandleError(c, status)
 				return
 			}`)
 		t.P(`	c.JSON(http.StatusOK, resp)`)
@@ -211,6 +213,7 @@ if status != nil {
 		t.P(`c.`, methInfo.apiInfo.HttpMethod, `("`, methInfo.apiInfo.Path, `",`, methInfo.routeFuncName, ` )`)
 	}
 	t.P(`	}`)
+
 }
 
 func (t *gin) hasHeaderTag(md *typemap.MessageDefinition) bool {
@@ -250,12 +253,33 @@ func (t *gin) generateGinInterface(file *descriptor.FileDescriptorProto, service
 		t.generateInterfaceMethod(file, service, method, comments)
 		t.P()
 	}
+	//	t.P(
+	//		`HandleParamError(c *gin.Context,err error) //参数解析错误
+	//	HandleError(c *gin.Context,status *errno.ErrNo) //一般错误码处理
+	//`)
+	t.P(`}`)
+	return count
+}
+
+func (t *gin) generateErrorHandleInterface(file *descriptor.FileDescriptorProto) {
+
+	servName := "ErrorHandleService"
+
+	t.P(`type `, servName, ` interface {`)
 	t.P(
 		`HandleParamError(c *gin.Context,err error) //参数解析错误
 	HandleError(c *gin.Context,status *errno.ErrNo) //一般错误码处理
 `)
+
 	t.P(`}`)
-	return count
+	t.P(`var errorHandleService ErrorHandleService`)
+	t.P(`
+// RegisterErrorHandleService 注册错误处理
+func RegisterErrorHandleService(server ErrorHandleService) {
+	errorHandleService = server
+}
+
+`)
 }
 
 func (t *gin) generateInterfaceMethod(file *descriptor.FileDescriptorProto,
